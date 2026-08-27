@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>replicateme - CLI that clones your writing style</title>
+  <meta name="description" content="Open-source CLI that learns your writing style from your actual messages and generates text that sounds exactly like you. Privacy-first, all data stays local.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>></text></svg>">
+</head>
+<body>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">open source &middot; MIT licensed</div>
+      <h1>replicate<span class="accent">me</span></h1>
+      <p class="hero-tagline">CLI that learns your writing style and generates messages that sound like you.<br>Typos, grammar quirks, and all.</p>
+      <div class="terminal hero-terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+          <span class="terminal-title">Terminal</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line">
+            <span class="prompt">$</span> npm install -g replicateme
+          </div>
+        </div>
+      </div>
+      <div class="hero-cta">
+        <a href="https://github.com/jschell12/replicateme" class="btn btn-primary">View on GitHub</a>
+        <a href="#install" class="btn btn-secondary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section" id="how-it-works">
+    <div class="container">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Ingest</h3>
+          <p>Point it at your messages. Currently supports iMessage, with Slack, Gmail, Twitter, Discord, and Reddit coming.</p>
+          <div class="terminal terminal-sm">
+            <div class="terminal-bar">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span> replicateme ingest --source imessage</div>
+              <div class="terminal-output">
+Scanning ~/Library/Messages/chat.db...
+Found 12,847 sent messages
+Analyzing writing patterns...
+Style profile saved to ~/.replicateme/profile.json
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Analyze</h3>
+          <p>It builds a fingerprint of how you actually write: capitalization habits, punctuation use, common shortcuts, typical errors.</p>
+          <div class="terminal terminal-sm">
+            <div class="terminal-bar">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span> replicateme profile</div>
+              <div class="terminal-output" id="profile-output">
+<span class="dim">Style Fingerprint</span>
+<span class="dim">-----------------</span>
+Avg message length:        <span class="val">31 chars</span>
+Capitalizes first word:    <span class="val">81%</span> of the time
+Ends with period:          <span class="val">1%</span> of the time
+Uses question marks:       <span class="val">17%</span> of the time
+Uses emoji:                <span class="val">2%</span> of the time
+Short fragment messages:   <span class="val">58%</span> of the time
+Lowercase "i" instead of "I": <span class="val">27%</span> of the time
+
+<span class="dim">Top Quirks</span>
+<span class="dim">----------</span>
+"im" without apostrophe    <span class="val">843 occurrences</span>
+"dont" without apostrophe  <span class="val">312 occurrences</span>
+"thats" without apostrophe <span class="val">198 occurrences</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Generate</h3>
+          <p>Give it a prompt and it writes back in your voice, using your style profile to match your patterns.</p>
+          <div class="terminal terminal-sm">
+            <div class="terminal-bar">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span> replicateme gen --quirk 50 "Friend asks: want to hit up that new brewery this weekend?"</div>
+              <div class="terminal-output">
+<span class="dim">Generated 3 variants (quirk: 50%)</span>
+
+<span class="gen-label">1.</span> Yeah im down for that. What day were you thinking?
+<span class="gen-label">2.</span> yeah could be down for that. what day were you thinking?
+<span class="gen-label">3.</span> yeah im down, what day were you thinking
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quirk Slider -->
+  <section class="section section-dark" id="quirk-slider">
+    <div class="container">
+      <h2>The quirk slider</h2>
+      <p class="section-subtitle">Control how much of your natural writing to include. From polished to raw.</p>
+      <div class="quirk-demo">
+        <div class="quirk-slider-container">
+          <input type="range" min="0" max="100" value="50" class="quirk-range" id="quirk-slider">
+          <div class="quirk-labels">
+            <span>0% clean</span>
+            <span id="quirk-value">50%</span>
+            <span>100% you</span>
+          </div>
+        </div>
+        <div class="quirk-examples">
+          <div class="quirk-example" data-level="0">
+            <div class="quirk-badge">0%</div>
+            <p>"I'm going to be about 15 minutes late. Can you grab me a coffee?"</p>
+            <span class="quirk-desc">Your voice and vocabulary, clean grammar</span>
+          </div>
+          <div class="quirk-example" data-level="25">
+            <div class="quirk-badge">25%</div>
+            <p>"Im going to be about 15 minutes late. Can you grab me a coffee?"</p>
+            <span class="quirk-desc">Mostly clean, occasional habits slip through</span>
+          </div>
+          <div class="quirk-example active" data-level="50">
+            <div class="quirk-badge">50%</div>
+            <p>"im gonna be like 15 min late. can you grab me a coffee"</p>
+            <span class="quirk-desc">Natural mix of your style and quirks</span>
+          </div>
+          <div class="quirk-example" data-level="75">
+            <div class="quirk-badge">75%</div>
+            <p>"im gonna be like 15 min late can you grab me a coffee"</p>
+            <span class="quirk-desc">Missing punctuation, lowercase, fragments</span>
+          </div>
+          <div class="quirk-example" data-level="100">
+            <div class="quirk-badge">100%</div>
+            <p>"im gonna be like 15 min late  can u grab me a coffee"</p>
+            <span class="quirk-desc">Full you: typos, double spaces, all of it</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="container">
+      <h2>Features</h2>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon">&#x1F512;</div>
+          <h3>Privacy-first</h3>
+          <p>All data stays on your machine. No accounts, no telemetry, no analytics. Open source so you can read every line.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F50D;</div>
+          <h3>Style fingerprinting</h3>
+          <p>Analyzes your real patterns: capitalization, punctuation, contractions, phrases, typical errors. Not a generic prompt.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F39B;</div>
+          <h3>Quirk slider</h3>
+          <p>0 to 100. Clean grammar in your voice, or full authenticity with every typo. You pick the level per message.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F4AC;</div>
+          <h3>Multi-platform</h3>
+          <p>Generate for iMessage, Slack, email, GitHub commits, Twitter. Each platform gets appropriate tone and length.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F4E5;</div>
+          <h3>Multiple data sources</h3>
+          <p>iMessage live now. Slack, Gmail, Twitter, Discord, Reddit, and Instagram archives coming.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F511;</div>
+          <h3>Bring your own key</h3>
+          <p>Works with Anthropic Claude or OpenAI GPT. Your API key, your account, your bill. No middleman.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section class="section section-dark" id="privacy">
+    <div class="container">
+      <h2>Your data stays yours</h2>
+      <div class="privacy-layout">
+        <div class="privacy-points">
+          <div class="privacy-point">
+            <span class="check">&#10003;</span>
+            <p>Messages are read from your local databases. Nothing is uploaded.</p>
+          </div>
+          <div class="privacy-point">
+            <span class="check">&#10003;</span>
+            <p>Style profiles stored at <code>~/.replicateme/</code> on your machine.</p>
+          </div>
+          <div class="privacy-point">
+            <span class="check">&#10003;</span>
+            <p>The only network call is to your LLM provider with the style profile for generation. No raw messages sent.</p>
+          </div>
+          <div class="privacy-point">
+            <span class="check">&#10003;</span>
+            <p>No telemetry. No analytics. No accounts. No tracking.</p>
+          </div>
+          <div class="privacy-point">
+            <span class="check">&#10003;</span>
+            <p>MIT licensed. Fork it, audit it, run it airgapped if you want.</p>
+          </div>
+        </div>
+        <div class="privacy-diagram">
+          <div class="diagram-box local">
+            <div class="diagram-label">Your machine</div>
+            <div class="diagram-items">
+              <div class="diagram-item">iMessage DB</div>
+              <div class="diagram-arrow">&#8595;</div>
+              <div class="diagram-item">replicateme CLI</div>
+              <div class="diagram-arrow">&#8595;</div>
+              <div class="diagram-item">~/.replicateme/profile.json</div>
+            </div>
+          </div>
+          <div class="diagram-connector">
+            <span>style profile only</span>
+            <div class="diagram-arrow-right">&#8594;</div>
+          </div>
+          <div class="diagram-box remote">
+            <div class="diagram-label">LLM API</div>
+            <div class="diagram-items">
+              <div class="diagram-item">Anthropic or OpenAI</div>
+              <div class="diagram-arrow">&#8595;</div>
+              <div class="diagram-item">Generated text</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Sources -->
+  <section class="section" id="sources">
+    <div class="container">
+      <h2>Data sources</h2>
+      <div class="sources-table">
+        <div class="source-row supported">
+          <span class="source-name">iMessage</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Reads local ~/Library/Messages/chat.db</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Slack</span>
+          <span class="source-status planned">planned</span>
+          <span class="source-how">Workspace export (JSON)</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Gmail</span>
+          <span class="source-status planned">planned</span>
+          <span class="source-how">Google Takeout (mbox)</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Twitter/X</span>
+          <span class="source-status planned">planned</span>
+          <span class="source-how">Data archive (JSON)</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Discord</span>
+          <span class="source-status planned">planned</span>
+          <span class="source-how">Data export (JSON)</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Reddit</span>
+          <span class="source-status planned">planned</span>
+          <span class="source-how">Data archive</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Instagram</span>
+          <span class="source-status planned">planned</span>
+          <span class="source-how">Data download (JSON)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section class="section section-dark" id="install">
+    <div class="container">
+      <h2>Get started</h2>
+      <div class="install-steps">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Terminal</span>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-line"><span class="prompt">$</span> npm install -g replicateme</div>
+            <div class="terminal-line">&nbsp;</div>
+            <div class="terminal-line"><span class="comment"># set your API key</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> export ANTHROPIC_API_KEY=sk-ant-...</div>
+            <div class="terminal-line">&nbsp;</div>
+            <div class="terminal-line"><span class="comment"># ingest your messages</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> replicateme ingest --source imessage</div>
+            <div class="terminal-line">&nbsp;</div>
+            <div class="terminal-line"><span class="comment"># generate</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> replicateme gen "Reply to: hey are you coming tonight?"</div>
+            <div class="terminal-output">
+<span class="dim">Generated 3 variants (quirk: 50%)</span>
+
+<span class="gen-label">1.</span> yeah ill be there
+<span class="gen-label">2.</span> yeah im coming
+<span class="gen-label">3.</span> yep on my way soon
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="install-cta">
+        <a href="https://github.com/jschell12/replicateme" class="btn btn-primary">View source on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">replicate<span class="accent">me</span></div>
+        <div class="footer-links">
+          <a href="https://github.com/jschell12/replicateme">GitHub</a>
+          <a href="https://github.com/jschell12/replicateme/blob/main/LICENSE">MIT License</a>
+          <a href="https://github.com/jschell12/replicateme/issues">Issues</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
