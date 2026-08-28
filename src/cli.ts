@@ -10,14 +10,19 @@ import { importInstagram } from "./connectors/instagram.js";
 import { importGitHub } from "./connectors/github.js";
 import { analyzeStyle, styleProfileToPrompt } from "./style/analyzer.js";
 import { generateMessage } from "./generate/generate.js";
+import { loadConfig, saveConfig, getConfigDir } from "./config.js";
 import {
-  loadConfig,
-  saveConfig,
-  saveProfile,
-  loadProfile,
-  getConfigDir,
-} from "./config.js";
-import type { RawMessage, StyleProfile } from "./corpus/types.js";
+  storeMessages,
+  getMessages,
+  getExamples,
+  savePerPlatformProfile,
+  getPerPlatformProfile,
+  getAllPlatformProfiles,
+  logIngest,
+  getCorpusStats,
+  closeDb,
+} from "./corpus/store.js";
+import type { RawMessage, StyleProfile, Platform } from "./corpus/types.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -34,27 +39,34 @@ const SOURCES = [
 ] as const;
 
 async function main() {
-  switch (command) {
-    case "ingest":
-      await cmdIngest();
-      break;
-    case "profile":
-      cmdProfile();
-      break;
-    case "generate":
-    case "gen":
-      await cmdGenerate();
-      break;
-    case "config":
-      cmdConfig();
-      break;
-    case "sources":
-      cmdSources();
-      break;
-    case "help":
-    default:
-      cmdHelp();
-      break;
+  try {
+    switch (command) {
+      case "ingest":
+        await cmdIngest();
+        break;
+      case "profile":
+        cmdProfile();
+        break;
+      case "generate":
+      case "gen":
+        await cmdGenerate();
+        break;
+      case "config":
+        cmdConfig();
+        break;
+      case "sources":
+        cmdSources();
+        break;
+      case "stats":
+        cmdStats();
+        break;
+      case "help":
+      default:
+        cmdHelp();
+        break;
+    }
+  } finally {
+    closeDb();
   }
 }
 
@@ -78,7 +90,10 @@ Commands:
 
   sources             List available data sources and how to get your data
 
+  stats               Show corpus statistics (messages per platform, profiles)
+
   profile             Show your analyzed writing style profile
+    --platform P       Show profile for a specific platform (or "combined")
 
   generate (gen)      Generate a message in your style
     --platform P       Platform style: imessage, slack, email, github, twitter (default: from config)
@@ -95,9 +110,11 @@ Commands:
 Setup:
   1. export ANTHROPIC_API_KEY=sk-...
   2. replicateme ingest --source imessage
-  3. replicateme gen "Friend asks: want to grab dinner tonight?"
+  3. replicateme ingest --source slack --file export.zip --user-name "You"
+  4. replicateme gen "Friend asks: want to grab dinner tonight?"
 
-Config stored at: ${getConfigDir()}
+Messages are stored locally at ${getConfigDir()}/corpus.db
+Ingest multiple sources - they accumulate, never overwrite.
 `);
 }
 
@@ -141,7 +158,37 @@ instagram
 github
   No archive needed - reads from local git repos.
   replicateme ingest --source github --repos ~/projects/repo1,~/projects/repo2 --email you@email.com
+
+Ingest as many sources as you want. Messages accumulate in a local database.
+Duplicates are automatically skipped.
 `);
+}
+
+function cmdStats() {
+  const stats = getCorpusStats();
+
+  if (stats.totalMessages === 0) {
+    console.log("No messages in corpus. Run `replicateme ingest` first.");
+    return;
+  }
+
+  console.log(`Corpus: ${stats.totalMessages.toLocaleString()} messages\n`);
+
+  console.log("Messages by platform:");
+  for (const { platform, count } of stats.byPlatform) {
+    console.log(`  ${platform.padEnd(12)} ${count.toLocaleString()}`);
+  }
+
+  if (stats.profiles.length > 0) {
+    console.log("\nStyle profiles:");
+    for (const { platform, messageCount, updatedAt } of stats.profiles) {
+      console.log(
+        `  ${platform.padEnd(12)} ${messageCount.toLocaleString()} msgs  (${updatedAt})`
+      );
+    }
+  }
+
+  console.log(`\nCorpus stored at: ${getConfigDir()}/corpus.db`);
 }
 
 async function cmdIngest() {
@@ -294,7 +341,7 @@ async function cmdIngest() {
     (m) => m.timestamp instanceof Date && !isNaN(m.timestamp.getTime())
   );
 
-  console.log(`Imported ${messages.length} messages`);
+  console.log(`Parsed ${messages.length} messages from ${source}`);
 
   if (messages.length === 0) {
     console.log("No messages found.");
@@ -304,38 +351,73 @@ async function cmdIngest() {
     process.exit(1);
   }
 
-  const earliest = messages[0]!.timestamp.toISOString().split("T")[0];
-  const latest =
-    messages[messages.length - 1]!.timestamp.toISOString().split("T")[0];
-  console.log(`Date range: ${earliest} to ${latest}`);
+  // store in corpus
+  const { inserted, skipped } = storeMessages(messages);
+  console.log(`Stored ${inserted} new messages (${skipped} duplicates skipped)`);
+  logIngest(source, inserted);
 
-  console.log("\nAnalyzing writing style...");
-  const profile = analyzeStyle(messages);
+  // build per-platform profile
+  const platform = platformForSource(source);
+  const platformMessages = getMessages({ platform });
+  console.log(
+    `\nAnalyzing ${platform} style (${platformMessages.length} total messages)...`
+  );
+  const platformProfile = analyzeStyle(platformMessages);
+  savePerPlatformProfile(platform, platformProfile, platformMessages.length);
 
-  saveProfile(profile as unknown as Record<string, unknown>);
-  console.log(`Profile saved to ${getConfigDir()}/profile.json`);
+  // rebuild combined profile from all messages
+  const allMessages = getMessages();
+  console.log(
+    `Rebuilding combined profile (${allMessages.length} total messages across all sources)...`
+  );
+  const combinedProfile = analyzeStyle(allMessages);
+  savePerPlatformProfile("combined", combinedProfile, allMessages.length);
 
-  console.log("\n" + styleProfileToPrompt(profile));
+  console.log(
+    `\nProfiles saved. Use 'replicateme profile' to view combined, or 'replicateme profile --platform ${platform}' for ${platform} only.`
+  );
+
+  // show the per-platform profile
+  console.log(`\n--- ${platform} style ---\n`);
+  console.log(styleProfileToPrompt(platformProfile));
 }
 
 function cmdProfile() {
-  const profile = loadProfile();
-  if (!profile) {
-    console.log("No profile found. Run `replicateme ingest` first.");
+  const platform = getFlag("--platform") ?? "combined";
+
+  if (platform === "all") {
+    const profiles = getAllPlatformProfiles();
+    if (profiles.length === 0) {
+      console.log("No profiles found. Run `replicateme ingest` first.");
+      process.exit(1);
+    }
+    for (const p of profiles) {
+      console.log(`\n=== ${p.platform} (${p.messageCount} messages) ===\n`);
+      console.log(styleProfileToPrompt(p.profile));
+    }
+    return;
+  }
+
+  const result = getPerPlatformProfile(platform as Platform | "combined");
+  if (!result) {
+    console.log(
+      `No profile found for "${platform}". Run \`replicateme ingest\` first.`
+    );
+    const available = getAllPlatformProfiles().map((p) => p.platform);
+    if (available.length > 0) {
+      console.log(`Available profiles: ${available.join(", ")}`);
+    }
     process.exit(1);
   }
 
-  console.log(styleProfileToPrompt(profile as unknown as StyleProfile));
+  console.log(
+    `${platform} profile (${result.messageCount} messages):\n`
+  );
+  console.log(styleProfileToPrompt(result.profile));
 }
 
 async function cmdGenerate() {
   const config = loadConfig();
-  const profile = loadProfile() as unknown as StyleProfile | null;
-
-  if (!profile) {
-    console.log("No profile found. Run `replicateme ingest` first.");
-    process.exit(1);
-  }
 
   const platform = getFlag("--platform") ?? config.defaultPlatform;
   const quirkLevel = parseInt(
@@ -355,26 +437,35 @@ async function cmdGenerate() {
     process.exit(1);
   }
 
+  // pick the best profile: per-platform if available, else combined
+  const platformProfile = getPerPlatformProfile(platform as Platform);
+  const combinedProfile = getPerPlatformProfile("combined");
+  const profileResult = platformProfile ?? combinedProfile;
+
+  if (!profileResult) {
+    console.log("No profile found. Run `replicateme ingest` first.");
+    process.exit(1);
+  }
+
   console.log(
     `Platform: ${platform} | Quirk: ${quirkLevel}% | Variants: ${variants}`
   );
+  if (platformProfile) {
+    console.log(`Using ${platform} profile (${platformProfile.messageCount} messages)`);
+  } else {
+    console.log(`No ${platform} profile found, using combined profile`);
+  }
   console.log(`Context: ${context}\n`);
 
-  let similarMessages: RawMessage[] = [];
-  try {
-    const messages = importIMessages({ copyToTmp: true });
-    const shuffled = messages.sort(() => Math.random() - 0.5);
-    similarMessages = shuffled.slice(0, 20);
-  } catch {
-    similarMessages = [];
-  }
+  // pull examples from corpus, preferring same platform
+  const similarMessages = getExamples(platform as Platform, 20);
 
   const results = await generateMessage({
     platform,
     context,
     quirkLevel,
     similarMessages,
-    styleProfile: profile,
+    styleProfile: profileResult.profile,
     variants,
     config,
   });
@@ -408,6 +499,20 @@ function cmdConfig() {
 
   console.log(JSON.stringify(config, null, 2));
   console.log(`\nConfig file: ${getConfigDir()}/config.json`);
+}
+
+function platformForSource(source: string): Platform {
+  const map: Record<string, Platform> = {
+    imessage: "imessage",
+    slack: "slack",
+    gmail: "email",
+    twitter: "twitter",
+    discord: "discord",
+    reddit: "reddit",
+    instagram: "instagram",
+    github: "github",
+  };
+  return map[source] ?? (source as Platform);
 }
 
 function getFlag(name: string): string | undefined {
