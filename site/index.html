@@ -43,7 +43,7 @@
         <div class="step">
           <div class="step-number">1</div>
           <h3>Ingest</h3>
-          <p>Point it at your messages. Currently supports iMessage, with Slack, Gmail, Twitter, Discord, and Reddit coming.</p>
+          <p>Point it at your messages. Import from iMessage, Slack, Gmail, Twitter, Discord, Reddit, Instagram, or GitHub.</p>
           <div class="terminal terminal-sm">
             <div class="terminal-bar">
               <span class="terminal-dot red"></span>
@@ -194,7 +194,7 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
         <div class="feature">
           <div class="feature-icon">&#x1F4E5;</div>
           <h3>Multiple data sources</h3>
-          <p>iMessage live now. Slack, Gmail, Twitter, Discord, Reddit, and Instagram archives coming.</p>
+          <p>8 sources supported: iMessage, Slack, Gmail, Twitter, Discord, Reddit, Instagram, and GitHub. Download your data archive, feed it to the CLI.</p>
         </div>
         <div class="feature">
           <div class="feature-icon">&#x1F511;</div>
@@ -270,35 +270,40 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
           <span class="source-status live">live</span>
           <span class="source-how">Reads local ~/Library/Messages/chat.db</span>
         </div>
-        <div class="source-row">
+        <div class="source-row supported">
           <span class="source-name">Slack</span>
-          <span class="source-status planned">planned</span>
-          <span class="source-how">Workspace export (JSON)</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Workspace export (ZIP)</span>
         </div>
-        <div class="source-row">
+        <div class="source-row supported">
           <span class="source-name">Gmail</span>
-          <span class="source-status planned">planned</span>
+          <span class="source-status live">live</span>
           <span class="source-how">Google Takeout (mbox)</span>
         </div>
-        <div class="source-row">
+        <div class="source-row supported">
           <span class="source-name">Twitter/X</span>
-          <span class="source-status planned">planned</span>
-          <span class="source-how">Data archive (JSON)</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Data archive (tweets + DMs)</span>
         </div>
-        <div class="source-row">
+        <div class="source-row supported">
           <span class="source-name">Discord</span>
-          <span class="source-status planned">planned</span>
-          <span class="source-how">Data export (JSON)</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Data export (ZIP)</span>
         </div>
-        <div class="source-row">
+        <div class="source-row supported">
           <span class="source-name">Reddit</span>
-          <span class="source-status planned">planned</span>
-          <span class="source-how">Data archive</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Data archive (posts + comments)</span>
         </div>
-        <div class="source-row">
+        <div class="source-row supported">
           <span class="source-name">Instagram</span>
-          <span class="source-status planned">planned</span>
-          <span class="source-how">Data download (JSON)</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Data download (DMs, captions, comments)</span>
+        </div>
+        <div class="source-row supported">
+          <span class="source-name">GitHub</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Local git repos (commit messages)</span>
         </div>
       </div>
     </div>
