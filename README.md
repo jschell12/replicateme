@@ -104,6 +104,12 @@ Config stored at `~/.replicateme/config.json`.
 - No telemetry, no analytics, no accounts
 - MIT licensed - read every line yourself
 
+## Persona specs
+
+The style profile that `replicateme ingest` generates captures the statistical patterns (punctuation frequency, capitalization ratios, common errors). For even better results, you can layer a hand-written persona spec on top that describes *how* you write in prose.
+
+See [`examples/persona-spec.md`](examples/persona-spec.md) for a real production example that's been battle-tested across work laptops with Claude Code. Coworkers can't tell the difference.
+
 ## Contributing
 
 PRs welcome, especially for new data source connectors. See `src/connectors/` for the pattern.
