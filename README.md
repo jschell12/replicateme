@@ -75,12 +75,15 @@ replicateme gen --quirk 100 "Reply to friend asking what's for dinner"
 | Source | Status | How |
 |--------|--------|-----|
 | iMessage | supported | Reads local `~/Library/Messages/chat.db` |
-| Slack | planned | Workspace export (JSON) |
-| Gmail | planned | Google Takeout (mbox) |
-| Twitter/X | planned | Data archive (JSON) |
-| GitHub | planned | Git log + API |
-| Discord | planned | Data export (JSON) |
-| Reddit | planned | Data archive |
+| Slack | supported | Workspace export ZIP |
+| Gmail | supported | Google Takeout mbox |
+| Twitter/X | supported | Data archive ZIP (tweets + DMs) |
+| GitHub | supported | Local git repos (commit messages) |
+| Discord | supported | Data export ZIP |
+| Reddit | supported | Data archive ZIP (posts + comments) |
+| Instagram | supported | Data download ZIP (DMs, captions, comments) |
+
+Run `replicateme sources` for step-by-step instructions on getting your data from each platform.
 
 ## Configuration
 
