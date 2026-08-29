@@ -37,6 +37,10 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://replicateme.cc"
     description: "CLI that learns your writing style and generates messages that sound like you"
+    hooks:
+      post:
+        install: |
+          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/replicateme"]
 
 checksum:
   name_template: "checksums.txt"
