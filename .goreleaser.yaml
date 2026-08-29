@@ -1,0 +1,54 @@
+version: 2
+
+project_name: replicateme
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/replicateme
+    binary: replicateme
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+homebrew_casks:
+  - repository:
+      owner: jschell12
+      name: homebrew-tap
+    homepage: "https://replicateme.cc"
+    description: "CLI that learns your writing style and generates messages that sound like you"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+release:
+  github:
+    owner: jschell12
+    name: replicateme
