@@ -30,17 +30,16 @@ archives:
         formats:
           - zip
 
-homebrew_casks:
+brews:
   - repository:
       owner: jschell12
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://replicateme.cc"
     description: "CLI that learns your writing style and generates messages that sound like you"
-    hooks:
-      post:
-        install: |
-          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/replicateme"]
+    license: "MIT"
+    install: |
+      bin.install "replicateme"
 
 checksum:
   name_template: "checksums.txt"
