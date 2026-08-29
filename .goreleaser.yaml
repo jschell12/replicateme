@@ -34,6 +34,7 @@ homebrew_casks:
   - repository:
       owner: jschell12
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://replicateme.cc"
     description: "CLI that learns your writing style and generates messages that sound like you"
 
