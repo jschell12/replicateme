@@ -1,0 +1,34 @@
+#!/bin/sh
+# replicateme prepare-commit-msg hook
+# Install: cp examples/prepare-commit-msg .git/hooks/
+# Generates a commit message in your style from the staged diff.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Only run for new commits (not merges, squashes, etc.)
+if [ -n "$COMMIT_SOURCE" ]; then
+    exit 0
+fi
+
+# Check if replicateme is installed
+if ! command -v replicateme >/dev/null 2>&1; then
+    exit 0
+fi
+
+DIFF=$(git diff --cached --stat)
+if [ -z "$DIFF" ]; then
+    exit 0
+fi
+
+FULL_DIFF=$(git diff --cached)
+
+MSG=$(replicateme gen --platform github --variants 1 "Write a commit message for this diff:
+
+$FULL_DIFF" 2>/dev/null)
+
+if [ -n "$MSG" ]; then
+    # Strip the "[1] " prefix if present
+    MSG=$(echo "$MSG" | sed 's/^\[1\] //')
+    echo "$MSG" > "$COMMIT_MSG_FILE"
+fi

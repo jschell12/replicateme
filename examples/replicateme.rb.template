@@ -1,0 +1,44 @@
+# Homebrew formula template for replicateme
+#
+# After a goreleaser release, update this formula in jschell12/homebrew-tap:
+#   1. Replace VERSION with the new version (e.g., 0.2.0)
+#   2. Download the darwin_amd64 and darwin_arm64 tarballs
+#   3. Run: shasum -a 256 replicateme_darwin_amd64.tar.gz
+#   4. Run: shasum -a 256 replicateme_darwin_arm64.tar.gz
+#   5. Replace SHA256_AMD64 and SHA256_ARM64 with the checksums
+#   6. Commit to jschell12/homebrew-tap as Formula/replicateme.rb
+
+class Replicateme < Formula
+  desc "CLI that learns your writing style and generates messages that sound like you"
+  homepage "https://replicateme.cc"
+  license "MIT"
+  version "VERSION"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/jschell12/replicateme/releases/download/v#{version}/replicateme_darwin_arm64.tar.gz"
+      sha256 "SHA256_ARM64"
+    else
+      url "https://github.com/jschell12/replicateme/releases/download/v#{version}/replicateme_darwin_amd64.tar.gz"
+      sha256 "SHA256_AMD64"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "https://github.com/jschell12/replicateme/releases/download/v#{version}/replicateme_linux_arm64.tar.gz"
+      sha256 "SHA256_LINUX_ARM64"
+    else
+      url "https://github.com/jschell12/replicateme/releases/download/v#{version}/replicateme_linux_amd64.tar.gz"
+      sha256 "SHA256_LINUX_AMD64"
+    end
+  end
+
+  def install
+    bin.install "replicateme"
+  end
+
+  test do
+    assert_match "replicateme", shell_output("#{bin}/replicateme help")
+  end
+end

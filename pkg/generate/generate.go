@@ -25,6 +25,8 @@ type GenerateRequest struct {
 	StyleProfile    corpus.StyleProfile
 	Variants        int
 	Config          Config
+	PersonaSpec     string
+	QuirkToggles    QuirkToggles
 }
 
 func GenerateMessage(req GenerateRequest) ([]string, error) {
@@ -39,6 +41,8 @@ func GenerateMessage(req GenerateRequest) ([]string, error) {
 		StyleProfile:    req.StyleProfile,
 		QuirkLevel:      req.QuirkLevel,
 		Instruction:     req.Instruction,
+		PersonaSpec:     req.PersonaSpec,
+		QuirkToggles:    req.QuirkToggles,
 	}
 
 	system := BuildSystemPrompt(opts)

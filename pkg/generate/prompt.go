@@ -15,6 +15,19 @@ type GenerateOptions struct {
 	StyleProfile    corpus.StyleProfile
 	QuirkLevel      int
 	Instruction     string
+	PersonaSpec     string
+	QuirkToggles    QuirkToggles
+}
+
+// QuirkToggles mirrors config.QuirkToggles for use in prompt building.
+type QuirkToggles struct {
+	Misspellings       *bool
+	GrammarErrors      *bool
+	MissingApostrophes *bool
+	LowercaseI         *bool
+	SkipPunctuation    *bool
+	DoubleSpaces       *bool
+	Fragments          *bool
 }
 
 func BuildSystemPrompt(opts GenerateOptions) string {
@@ -30,6 +43,12 @@ func BuildSystemPrompt(opts GenerateOptions) string {
 	b.WriteString(style.StyleProfileToPrompt(opts.StyleProfile))
 	b.WriteString("\n\n")
 
+	if opts.PersonaSpec != "" {
+		b.WriteString("## Persona specification\n\n")
+		b.WriteString(opts.PersonaSpec)
+		b.WriteString("\n\n")
+	}
+
 	fmt.Fprintf(&b, "## Quirk level: %d%%\n\n", opts.QuirkLevel)
 	switch {
 	case opts.QuirkLevel == 0:
@@ -40,6 +59,11 @@ func BuildSystemPrompt(opts GenerateOptions) string {
 		b.WriteString("Write naturally in their style including their typical quirks: missing apostrophes, lowercase starts, fragments, and their common phrases. This should read like their normal messages.\n")
 	default:
 		b.WriteString("Full authenticity. Include all their writing quirks: missing apostrophes, lowercase i, sentence fragments, double spaces, repeated words, minimal punctuation. This should be indistinguishable from their actual messages.\n")
+	}
+
+	if overrides := quirkOverridesSection(opts.QuirkToggles); overrides != "" {
+		b.WriteString("\n")
+		b.WriteString(overrides)
 	}
 
 	if len(opts.SimilarMessages) > 0 {
@@ -93,7 +117,52 @@ func platformGuidance(platform string) string {
 		return "This is a Discord message. Similar to texting but may be in a server with specific context."
 	case "reddit":
 		return "This is a Reddit post or comment. May be longer and more detailed than texts but still in the person's voice."
+	case "tiktok":
+		return "This is a TikTok comment or direct message. Very casual, often short. May use internet slang and abbreviations."
+	case "instagram":
+		return "This is an Instagram DM, comment, or caption. Casual and visual-context-aware."
 	default:
 		return "Write in the person's natural style for this platform."
 	}
+}
+
+func quirkOverridesSection(q QuirkToggles) string {
+	type toggle struct {
+		label string
+		val   *bool
+	}
+	toggles := []toggle{
+		{"Misspellings", q.Misspellings},
+		{"Grammar errors", q.GrammarErrors},
+		{"Missing apostrophes", q.MissingApostrophes},
+		{"Lowercase i", q.LowercaseI},
+		{"Skip punctuation", q.SkipPunctuation},
+		{"Double spaces", q.DoubleSpaces},
+		{"Fragments", q.Fragments},
+	}
+
+	var lines []string
+	for _, t := range toggles {
+		if t.val == nil {
+			continue
+		}
+		state := "disabled"
+		if *t.val {
+			state = "enabled"
+		}
+		lines = append(lines, fmt.Sprintf("- %s: %s", t.label, state))
+	}
+
+	if len(lines) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("## Quirk overrides\n\n")
+	b.WriteString("The following quirks are explicitly enabled/disabled regardless of quirk level:\n")
+	for _, line := range lines {
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+	return b.String()
 }

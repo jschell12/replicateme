@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jschell12/replicateme/pkg/clipboard"
 	"github.com/jschell12/replicateme/pkg/config"
 	"github.com/jschell12/replicateme/pkg/connectors"
 	"github.com/jschell12/replicateme/pkg/corpus"
@@ -15,7 +16,7 @@ import (
 	"github.com/jschell12/replicateme/pkg/style"
 )
 
-var sources = []string{"imessage", "slack", "gmail", "twitter", "discord", "reddit", "instagram", "github"}
+var sources = []string{"imessage", "slack", "gmail", "twitter", "discord", "reddit", "instagram", "github", "tiktok"}
 
 func main() {
 	args := os.Args[1:]
@@ -72,6 +73,8 @@ Commands:
     --platform P       Platform style (default: from config)
     --quirk N          Quirk level 0-100 (default: from config)
     --variants N       Number of variants (default: 3)
+    --persona PATH     Markdown file with persona specification
+    --copy [N]         Copy variant N to clipboard (default: 1)
     <context>          The rest of the args are the context/prompt
 
   config              View or set configuration
@@ -79,6 +82,9 @@ Commands:
     --model M          Model name
     --quirk-level N    Default quirk level 0-100
     --platform P       Default platform
+    --persona PATH     Default persona spec file
+    --enable-quirk Q   Enable a specific quirk toggle
+    --disable-quirk Q  Disable a specific quirk toggle
 
 Setup:
   1. export ANTHROPIC_API_KEY=sk-...
@@ -124,6 +130,10 @@ instagram
 github
   No archive needed - reads from local git repos.
   replicateme ingest --source github --repos ~/project1,~/project2 --email you@email.com
+
+tiktok
+  Settings > Privacy > Download Your Data > Request Data.
+  replicateme ingest --source tiktok --file tiktok-data.zip --username yourusername
 
 Ingest as many sources as you want. Messages accumulate in a local database.
 Duplicates are automatically skipped.`)
@@ -266,6 +276,14 @@ func cmdIngest(args []string) {
 			Email: getFlag(args, "--email"),
 			Since: since,
 		})
+	case "tiktok":
+		requireFile(file, "tiktok")
+		fmt.Println("Importing TikTok...")
+		messages, err = connectors.ImportTikTok(connectors.TikTokImportOptions{
+			File:     file,
+			Username: getFlag(args, "--username"),
+			Since:    since,
+		})
 	}
 
 	if err != nil {
@@ -378,6 +396,32 @@ func cmdGenerate(args []string) {
 		}
 	}
 
+	// persona spec: --persona flag overrides config default
+	personaPath := getFlag(args, "--persona")
+	if personaPath == "" {
+		personaPath = cfg.Persona
+	}
+	var personaSpec string
+	if personaPath != "" {
+		data, err := os.ReadFile(personaPath)
+		if err != nil {
+			fmt.Printf("Error reading persona file: %v\n", err)
+			os.Exit(1)
+		}
+		personaSpec = string(data)
+	}
+
+	// clipboard copy: --copy with optional variant number
+	copyVariant := -1 // -1 means no copy
+	if hasFlag(args, "--copy") {
+		copyVariant = 1 // default to variant 1
+		if v := getFlag(args, "--copy"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				copyVariant = n
+			}
+		}
+	}
+
 	var contextParts []string
 	skipNext := false
 	for _, a := range args {
@@ -394,7 +438,7 @@ func cmdGenerate(args []string) {
 	context := strings.Join(contextParts, " ")
 
 	if context == "" {
-		fmt.Println("Usage: replicateme gen [--platform P] [--quirk N] <context>")
+		fmt.Println("Usage: replicateme gen [--platform P] [--quirk N] [--persona PATH] [--copy [N]] <context>")
 		fmt.Println(`Example: replicateme gen "Friend asks: want to grab dinner?"`)
 		os.Exit(1)
 	}
@@ -420,6 +464,17 @@ func cmdGenerate(args []string) {
 
 	examples, _ := corpus.GetExamples(corpus.Platform(platform), 20)
 
+	// convert config quirk toggles to generate package type
+	qt := generate.QuirkToggles{
+		Misspellings:       cfg.Quirks.Misspellings,
+		GrammarErrors:      cfg.Quirks.GrammarErrors,
+		MissingApostrophes: cfg.Quirks.MissingApostrophes,
+		LowercaseI:         cfg.Quirks.LowercaseI,
+		SkipPunctuation:    cfg.Quirks.SkipPunctuation,
+		DoubleSpaces:       cfg.Quirks.DoubleSpaces,
+		Fragments:          cfg.Quirks.Fragments,
+	}
+
 	results, err := generate.GenerateMessage(generate.GenerateRequest{
 		Platform:        platform,
 		Context:         context,
@@ -427,6 +482,8 @@ func cmdGenerate(args []string) {
 		SimilarMessages: examples,
 		StyleProfile:    profileResult.Profile,
 		Variants:        variants,
+		PersonaSpec:     personaSpec,
+		QuirkToggles:    qt,
 		Config: generate.Config{
 			Provider: cfg.Provider,
 			Model:    cfg.Model,
@@ -440,6 +497,20 @@ func cmdGenerate(args []string) {
 	for i, r := range results {
 		fmt.Printf("[%d] %s\n", i+1, strings.TrimSpace(r))
 	}
+
+	// copy to clipboard if requested
+	if copyVariant > 0 && len(results) > 0 {
+		idx := copyVariant - 1
+		if idx >= len(results) {
+			idx = 0
+		}
+		text := strings.TrimSpace(results[idx])
+		if err := clipboard.Copy(text); err != nil {
+			fmt.Fprintf(os.Stderr, "Could not copy to clipboard: %v\n", err)
+		} else {
+			fmt.Printf("\nVariant %d copied to clipboard.\n", idx+1)
+		}
+	}
 }
 
 func cmdConfig(args []string) {
@@ -449,8 +520,11 @@ func cmdConfig(args []string) {
 	model := getFlag(args, "--model")
 	quirkLevelStr := getFlag(args, "--quirk-level")
 	platform := getFlag(args, "--platform")
+	persona := getFlag(args, "--persona")
+	enableQuirk := getFlag(args, "--enable-quirk")
+	disableQuirk := getFlag(args, "--disable-quirk")
 
-	hasChanges := provider != "" || model != "" || quirkLevelStr != "" || platform != ""
+	hasChanges := provider != "" || model != "" || quirkLevelStr != "" || platform != "" || persona != "" || enableQuirk != "" || disableQuirk != ""
 
 	if provider != "" {
 		cfg.Provider = provider
@@ -465,6 +539,15 @@ func cmdConfig(args []string) {
 	}
 	if platform != "" {
 		cfg.DefaultPlatform = platform
+	}
+	if persona != "" {
+		cfg.Persona = persona
+	}
+	if enableQuirk != "" {
+		setQuirkToggle(&cfg.Quirks, enableQuirk, true)
+	}
+	if disableQuirk != "" {
+		setQuirkToggle(&cfg.Quirks, disableQuirk, false)
 	}
 
 	if hasChanges {
@@ -482,6 +565,29 @@ func cmdConfig(args []string) {
 	fmt.Printf("\nConfig file: %s/config.json\n", config.ConfigDir())
 }
 
+func setQuirkToggle(q *config.QuirkToggles, name string, val bool) {
+	v := val
+	switch strings.ToLower(name) {
+	case "misspellings":
+		q.Misspellings = &v
+	case "grammarerrors":
+		q.GrammarErrors = &v
+	case "missingapostrophes":
+		q.MissingApostrophes = &v
+	case "lowercasei":
+		q.LowercaseI = &v
+	case "skippunctuation":
+		q.SkipPunctuation = &v
+	case "doublespaces":
+		q.DoubleSpaces = &v
+	case "fragments":
+		q.Fragments = &v
+	default:
+		fmt.Printf("Unknown quirk %q. Available: misspellings, grammarErrors, missingApostrophes, lowercaseI, skipPunctuation, doubleSpaces, fragments\n", name)
+		os.Exit(1)
+	}
+}
+
 func getFlag(args []string, name string) string {
 	for i, a := range args {
 		if a == name && i+1 < len(args) {
@@ -489,6 +595,16 @@ func getFlag(args []string, name string) string {
 		}
 	}
 	return ""
+}
+
+// hasFlag checks if a flag is present in args (with or without a value).
+func hasFlag(args []string, name string) bool {
+	for _, a := range args {
+		if a == name {
+			return true
+		}
+	}
+	return false
 }
 
 func requireFile(file, source string) {
