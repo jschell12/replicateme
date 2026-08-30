@@ -79,8 +79,9 @@ Commands:
     <context>          The rest of the args are the context/prompt
 
   config              View or set configuration
-    --provider P       LLM provider: anthropic or openai
+    --provider P       LLM provider: anthropic, openai, claude-cli, ollama
     --model M          Model name
+    --base-url URL     Custom API endpoint (openai-compatible servers, ollama)
     --quirk-level N    Default quirk level 0-100
     --platform P       Default platform
     --persona PATH     Default persona spec file
@@ -531,6 +532,7 @@ func cmdGenerate(args []string) {
 		Config: generate.Config{
 			Provider: cfg.Provider,
 			Model:    cfg.Model,
+			BaseURL:  cfg.BaseURL,
 		},
 	})
 	if err != nil {
@@ -562,6 +564,7 @@ func cmdConfig(args []string) {
 
 	provider := getFlag(args, "--provider")
 	model := getFlag(args, "--model")
+	baseURL := getFlag(args, "--base-url")
 	quirkLevelStr := getFlag(args, "--quirk-level")
 	platform := getFlag(args, "--platform")
 	persona := getFlag(args, "--persona")
@@ -572,13 +575,16 @@ func cmdConfig(args []string) {
 	ollamaURL := getFlag(args, "--ollama-url")
 	embedModel := getFlag(args, "--embed-model")
 
-	hasChanges := provider != "" || model != "" || quirkLevelStr != "" || platform != "" || persona != "" || enableQuirk != "" || disableQuirk != "" || ragEnabled != "" || qdrantURL != "" || ollamaURL != "" || embedModel != ""
+	hasChanges := provider != "" || model != "" || baseURL != "" || quirkLevelStr != "" || platform != "" || persona != "" || enableQuirk != "" || disableQuirk != "" || ragEnabled != "" || qdrantURL != "" || ollamaURL != "" || embedModel != ""
 
 	if provider != "" {
 		cfg.Provider = provider
 	}
 	if model != "" {
 		cfg.Model = model
+	}
+	if baseURL != "" {
+		cfg.BaseURL = baseURL
 	}
 	if quirkLevelStr != "" {
 		if v, err := strconv.Atoi(quirkLevelStr); err == nil {
