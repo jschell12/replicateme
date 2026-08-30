@@ -28,6 +28,7 @@ type RAGConfig struct {
 type Config struct {
 	Provider        string       `json:"provider"`
 	Model           string       `json:"model,omitempty"`
+	BaseURL         string       `json:"baseUrl,omitempty"`
 	QuirkLevel      int          `json:"quirkLevel"`
 	DefaultPlatform string       `json:"defaultPlatform"`
 	Persona         string       `json:"persona,omitempty"`

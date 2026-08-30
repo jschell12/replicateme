@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/jschell12/replicateme/pkg/corpus"
 )
@@ -14,6 +16,7 @@ import (
 type Config struct {
 	Provider string `json:"provider"`
 	Model    string `json:"model,omitempty"`
+	BaseURL  string `json:"baseUrl,omitempty"` // custom endpoint for openai-compatible providers
 }
 
 type GenerateRequest struct {
@@ -48,10 +51,16 @@ func GenerateMessage(req GenerateRequest) ([]string, error) {
 	system := BuildSystemPrompt(opts)
 	user := BuildUserPrompt(opts)
 
-	if req.Config.Provider == "openai" {
+	switch req.Config.Provider {
+	case "openai":
 		return generateOpenAI(system, user, req.Variants, req.Config)
+	case "claude-cli":
+		return generateClaudeCLI(system, user, req.Variants)
+	case "ollama":
+		return generateOllama(system, user, req.Variants, req.Config)
+	default:
+		return generateAnthropic(system, user, req.Variants, req.Config)
 	}
-	return generateAnthropic(system, user, req.Variants, req.Config)
 }
 
 func generateAnthropic(system, user string, variants int, cfg Config) ([]string, error) {
@@ -128,8 +137,14 @@ func generateAnthropic(system, user string, variants int, cfg Config) ([]string,
 }
 
 func generateOpenAI(system, user string, variants int, cfg Config) ([]string, error) {
+	baseURL := cfg.BaseURL
+	if baseURL == "" {
+		baseURL = "https://api.openai.com"
+	}
+
 	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
+	// only require API key for the real OpenAI endpoint
+	if apiKey == "" && baseURL == "https://api.openai.com" {
 		return nil, fmt.Errorf("OPENAI_API_KEY not set")
 	}
 
@@ -158,13 +173,15 @@ func generateOpenAI(system, user string, variants int, cfg Config) ([]string, er
 			return nil, err
 		}
 
-		req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(jsonBody))
+		req, err := http.NewRequest("POST", baseURL+"/v1/chat/completions", bytes.NewReader(jsonBody))
 		if err != nil {
 			return nil, err
 		}
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+apiKey)
+		if apiKey != "" {
+			req.Header.Set("Authorization", "Bearer "+apiKey)
+		}
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -194,6 +211,102 @@ func generateOpenAI(system, user string, variants int, cfg Config) ([]string, er
 
 		if len(result.Choices) > 0 {
 			results = append(results, result.Choices[0].Message.Content)
+		}
+	}
+
+	return results, nil
+}
+
+func generateClaudeCLI(system, user string, variants int) ([]string, error) {
+	claudePath, err := exec.LookPath("claude")
+	if err != nil {
+		return nil, fmt.Errorf("claude CLI not found in PATH. Install it or use a different provider")
+	}
+
+	results := make([]string, 0, variants)
+
+	prompt := fmt.Sprintf("System instructions:\n%s\n\nUser request:\n%s\n\nRespond with ONLY the message text. No quotes, no explanation.", system, user)
+
+	for i := 0; i < variants; i++ {
+		cmd := exec.Command(claudePath, "-p", prompt)
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+
+		if err := cmd.Run(); err != nil {
+			return nil, fmt.Errorf("claude CLI failed: %v\n%s", err, stderr.String())
+		}
+
+		text := strings.TrimSpace(stdout.String())
+		if text != "" {
+			results = append(results, text)
+		}
+	}
+
+	return results, nil
+}
+
+func generateOllama(system, user string, variants int, cfg Config) ([]string, error) {
+	baseURL := cfg.BaseURL
+	if baseURL == "" {
+		baseURL = "http://10.0.0.2:11434"
+	}
+
+	model := cfg.Model
+	if model == "" {
+		model = "mistral-small:24b"
+	}
+
+	results := make([]string, 0, variants)
+
+	for i := 0; i < variants; i++ {
+		temp := 0.8 + float64(i)*0.05
+
+		body := map[string]any{
+			"model": model,
+			"messages": []map[string]string{
+				{"role": "system", "content": system},
+				{"role": "user", "content": user},
+			},
+			"stream": false,
+			"options": map[string]any{
+				"temperature": temp,
+				"num_predict": 256,
+			},
+		}
+
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := http.Post(baseURL+"/api/chat", "application/json", bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, fmt.Errorf("ollama unreachable at %s: %w", baseURL, err)
+		}
+
+		respBody, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("%d %s", resp.StatusCode, string(respBody))
+		}
+
+		var result struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		}
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			return nil, err
+		}
+
+		text := strings.TrimSpace(result.Message.Content)
+		if text != "" {
+			results = append(results, text)
 		}
 	}
 
