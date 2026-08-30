@@ -1,45 +1,31 @@
 # replicateme status
 
-## 2026-08-30 (session 2)
+## 2026-08-30 (session 3)
 
 ### Completed
 
-- **v0.2.0 released** (PR #22) - 7 features shipped:
-  - Persona spec integration (`--persona PATH` flag + config default)
-  - Git hook (`examples/prepare-commit-msg` for auto commit messages)
-  - Clipboard copy (`--copy [N]` flag, detects pbcopy/xclip/clip)
-  - TikTok connector (comments + DMs from data download ZIP)
-  - Quirk toggles (`--enable-quirk`/`--disable-quirk` for 7 granular controls)
-  - Per-platform example selection verified working
-  - Removed deprecated goreleaser brews, added manual formula template
-- **Homebrew formula updated** - manually pushed v0.2.0 to jschell12/homebrew-tap, `brew upgrade` tested
-- **WireGuard NAT fix** - pfctl NAT anchor was empty on mini, reloaded to restore VPN forwarding to Framework
+- **v0.2.0 released** (PR #22) with 7 features: persona spec (`--persona`), git hook (`examples/prepare-commit-msg`), clipboard copy (`--copy`), TikTok connector, quirk toggles (7 granular controls), per-platform examples verified, goreleaser formula template
+- **Homebrew formula updated** to v0.2.0, `brew upgrade` tested
+- **Marketing site updated** (PR #24) - added persona specs, git hook, clipboard, quirk toggles, TikTok to features grid and data sources. Hero install switched to brew. Install section shows new flags.
 
 ### Next steps
 
-- Script the homebrew formula update into the release workflow (manual update works but could be automated)
-- RAG with vector search (Qdrant + bge-m3 on Framework)
-- Update marketing site with new features (persona spec, quirk toggles, git hook)
+- RAG with vector search (Qdrant + bge-m3 on Framework) to replace random example selection
+- Automate homebrew formula update in release workflow
+- More real-world testing with multi-source corpus
 
-### Decisions
+## 2026-08-30 (session 2)
 
-- Manual homebrew formula over goreleaser brews: brews deprecated, homebrew_casks has Gatekeeper quarantine problem. Manual formula update per release is about 1 minute of work.
-- WireGuard NAT on mini: pfctl anchor gets cleared on reboot if the wireguard-up.sh script fails or runs late. Need to investigate why the anchor wasn't loaded.
+- v0.2.0 features implemented, WireGuard NAT fix
 
 ## 2026-08-30
-
-### Completed
 
 - workflow_dispatch (PR #18), WireGuard forwarding fix (schellout PR #268)
 
 ## 2026-08-29
 
-### Completed
-
-- goreleaser + brew tap (PRs #11-#15), Gatekeeper quarantine fix, CI/CD pipeline (PR #16), v0.1.3 released
+- goreleaser + brew tap (PRs #11-#15), Gatekeeper fix, CI/CD (PR #16), v0.1.3
 
 ## 2026-08-28
 
-### Completed
-
-- Project created, Go rewrite (PR #8), corpus store (PR #7), marketing site, 8 data source connectors, domain replicateme.cc
+- Project created, Go rewrite (PR #8), corpus store (PR #7), marketing site, 8 connectors, domain
