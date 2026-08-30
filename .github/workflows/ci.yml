@@ -42,4 +42,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: site/analytics-worker
+          # The action's default wrangler predates wrangler.jsonc support
+          # and fails with "Missing entry-point".
+          wranglerVersion: "4"
           command: deploy
