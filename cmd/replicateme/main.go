@@ -13,6 +13,7 @@ import (
 	"github.com/jschell12/replicateme/pkg/connectors"
 	"github.com/jschell12/replicateme/pkg/corpus"
 	"github.com/jschell12/replicateme/pkg/generate"
+	"github.com/jschell12/replicateme/pkg/rag"
 	"github.com/jschell12/replicateme/pkg/style"
 )
 
@@ -85,6 +86,10 @@ Commands:
     --persona PATH     Default persona spec file
     --enable-quirk Q   Enable a specific quirk toggle
     --disable-quirk Q  Disable a specific quirk toggle
+    --rag on/off       Enable/disable RAG vector search for examples
+    --qdrant-url URL   Qdrant URL (default: http://10.0.0.2:6333)
+    --ollama-url URL   Ollama URL for embeddings (default: http://10.0.0.2:11434)
+    --embed-model M    Embedding model (default: bge-m3)
 
 Setup:
   1. export ANTHROPIC_API_KEY=sk-...
@@ -333,6 +338,27 @@ func cmdIngest(args []string) {
 	corpus.SaveProfile("combined", combinedProfile, len(allMessages))
 
 	fmt.Printf("\nProfiles saved. Use 'replicateme profile' to view combined, or 'replicateme profile --platform %s' for %s only.\n", platform, platform)
+
+	// index messages in Qdrant for RAG if enabled
+	cfg := config.Load()
+	if cfg.RAG.Enabled {
+		ragCfg := ragConfigFromCfg(cfg)
+		if rag.IsAvailable(ragCfg) {
+			fmt.Println("\nIndexing messages for RAG search...")
+			indexed, err := rag.IndexMessages(ragCfg, messages, func(done, total, skipped int) {
+				fmt.Printf("\r  %d/%d embedded (%d already indexed)", done, total, skipped)
+			})
+			fmt.Println() // newline after progress
+			if err != nil {
+				fmt.Printf("RAG indexing error: %v\n", err)
+			} else {
+				fmt.Printf("Indexed %d messages in Qdrant\n", indexed)
+			}
+		} else {
+			fmt.Println("\nRAG is enabled but Qdrant/Ollama not reachable. Skipping indexing.")
+		}
+	}
+
 	fmt.Printf("\n--- %s style ---\n\n", platform)
 	fmt.Println(style.StyleProfileToPrompt(platformProfile))
 }
@@ -462,7 +488,25 @@ func cmdGenerate(args []string) {
 	}
 	fmt.Printf("Context: %s\n\n", context)
 
-	examples, _ := corpus.GetExamples(corpus.Platform(platform), 20)
+	// try RAG search for similar examples, fall back to random
+	var examples []corpus.RawMessage
+	if cfg.RAG.Enabled {
+		ragCfg := ragConfigFromCfg(cfg)
+		if rag.IsAvailable(ragCfg) {
+			ragExamples, err := rag.Search(ragCfg, context, platform, 15)
+			if err == nil && len(ragExamples) > 0 {
+				examples = ragExamples
+				fmt.Printf("Found %d similar examples via RAG\n\n", len(examples))
+			} else {
+				if err != nil {
+					fmt.Printf("RAG search failed (%v), falling back to random examples\n", err)
+				}
+			}
+		}
+	}
+	if len(examples) == 0 {
+		examples, _ = corpus.GetExamples(corpus.Platform(platform), 20)
+	}
 
 	// convert config quirk toggles to generate package type
 	qt := generate.QuirkToggles{
@@ -523,8 +567,12 @@ func cmdConfig(args []string) {
 	persona := getFlag(args, "--persona")
 	enableQuirk := getFlag(args, "--enable-quirk")
 	disableQuirk := getFlag(args, "--disable-quirk")
+	ragEnabled := getFlag(args, "--rag")
+	qdrantURL := getFlag(args, "--qdrant-url")
+	ollamaURL := getFlag(args, "--ollama-url")
+	embedModel := getFlag(args, "--embed-model")
 
-	hasChanges := provider != "" || model != "" || quirkLevelStr != "" || platform != "" || persona != "" || enableQuirk != "" || disableQuirk != ""
+	hasChanges := provider != "" || model != "" || quirkLevelStr != "" || platform != "" || persona != "" || enableQuirk != "" || disableQuirk != "" || ragEnabled != "" || qdrantURL != "" || ollamaURL != "" || embedModel != ""
 
 	if provider != "" {
 		cfg.Provider = provider
@@ -548,6 +596,18 @@ func cmdConfig(args []string) {
 	}
 	if disableQuirk != "" {
 		setQuirkToggle(&cfg.Quirks, disableQuirk, false)
+	}
+	if ragEnabled != "" {
+		cfg.RAG.Enabled = ragEnabled == "true" || ragEnabled == "on" || ragEnabled == "1"
+	}
+	if qdrantURL != "" {
+		cfg.RAG.QdrantURL = qdrantURL
+	}
+	if ollamaURL != "" {
+		cfg.RAG.OllamaURL = ollamaURL
+	}
+	if embedModel != "" {
+		cfg.RAG.EmbedModel = embedModel
 	}
 
 	if hasChanges {
@@ -620,4 +680,18 @@ func platformForSource(source string) string {
 		return "email"
 	}
 	return source
+}
+
+func ragConfigFromCfg(cfg config.Config) rag.RAGConfig {
+	rc := rag.DefaultConfig()
+	if cfg.RAG.QdrantURL != "" {
+		rc.QdrantURL = cfg.RAG.QdrantURL
+	}
+	if cfg.RAG.OllamaURL != "" {
+		rc.OllamaURL = cfg.RAG.OllamaURL
+	}
+	if cfg.RAG.EmbedModel != "" {
+		rc.EmbedModel = cfg.RAG.EmbedModel
+	}
+	return rc
 }

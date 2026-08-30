@@ -18,6 +18,13 @@ type QuirkToggles struct {
 	Fragments          *bool `json:"fragments,omitempty"`
 }
 
+type RAGConfig struct {
+	Enabled    bool   `json:"enabled"`
+	QdrantURL  string `json:"qdrantUrl,omitempty"`
+	OllamaURL  string `json:"ollamaUrl,omitempty"`
+	EmbedModel string `json:"embedModel,omitempty"`
+}
+
 type Config struct {
 	Provider        string       `json:"provider"`
 	Model           string       `json:"model,omitempty"`
@@ -25,6 +32,7 @@ type Config struct {
 	DefaultPlatform string       `json:"defaultPlatform"`
 	Persona         string       `json:"persona,omitempty"`
 	Quirks          QuirkToggles `json:"quirks,omitempty"`
+	RAG             RAGConfig    `json:"rag,omitempty"`
 }
 
 func configDir() string {
