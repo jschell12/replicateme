@@ -14,6 +14,7 @@ const (
 	Discord   Platform = "discord"
 	Reddit    Platform = "reddit"
 	Instagram Platform = "instagram"
+	TikTok    Platform = "tiktok"
 )
 
 // RawMessage is a single message ingested from any platform.

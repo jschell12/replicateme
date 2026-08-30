@@ -30,16 +30,9 @@ archives:
         formats:
           - zip
 
-brews:
-  - repository:
-      owner: jschell12
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    homepage: "https://replicateme.cc"
-    description: "CLI that learns your writing style and generates messages that sound like you"
-    license: "MIT"
-    install: |
-      bin.install "replicateme"
+# Homebrew formula is maintained manually in jschell12/homebrew-tap.
+# See examples/replicateme.rb.template for the formula template.
+# The goreleaser `brews` field is deprecated and has been removed.
 
 checksum:
   name_template: "checksums.txt"

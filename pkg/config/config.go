@@ -6,11 +6,25 @@ import (
 	"path/filepath"
 )
 
+// QuirkToggles provides granular control over individual writing quirks,
+// independent of the overall quirk level.
+type QuirkToggles struct {
+	Misspellings       *bool `json:"misspellings,omitempty"`
+	GrammarErrors      *bool `json:"grammarErrors,omitempty"`
+	MissingApostrophes *bool `json:"missingApostrophes,omitempty"`
+	LowercaseI         *bool `json:"lowercaseI,omitempty"`
+	SkipPunctuation    *bool `json:"skipPunctuation,omitempty"`
+	DoubleSpaces       *bool `json:"doubleSpaces,omitempty"`
+	Fragments          *bool `json:"fragments,omitempty"`
+}
+
 type Config struct {
-	Provider        string `json:"provider"`
-	Model           string `json:"model,omitempty"`
-	QuirkLevel      int    `json:"quirkLevel"`
-	DefaultPlatform string `json:"defaultPlatform"`
+	Provider        string       `json:"provider"`
+	Model           string       `json:"model,omitempty"`
+	QuirkLevel      int          `json:"quirkLevel"`
+	DefaultPlatform string       `json:"defaultPlatform"`
+	Persona         string       `json:"persona,omitempty"`
+	Quirks          QuirkToggles `json:"quirks,omitempty"`
 }
 
 func configDir() string {
