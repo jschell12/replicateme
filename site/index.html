@@ -24,7 +24,7 @@
         </div>
         <div class="terminal-body">
           <div class="terminal-line">
-            <span class="prompt">$</span> go install github.com/jschell12/replicateme/cmd/replicateme@latest
+            <span class="prompt">$</span> brew install jschell12/tap/replicateme
           </div>
         </div>
       </div>
@@ -43,7 +43,7 @@
         <div class="step">
           <div class="step-number">1</div>
           <h3>Ingest</h3>
-          <p>Point it at your messages. Import from iMessage, Slack, Gmail, Twitter, Discord, Reddit, Instagram, or GitHub.</p>
+          <p>Point it at your messages. 9 sources: iMessage, Slack, Gmail, Twitter, Discord, Reddit, Instagram, GitHub, TikTok.</p>
           <div class="terminal terminal-sm">
             <div class="terminal-bar">
               <span class="terminal-dot red"></span>
@@ -183,23 +183,33 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
         </div>
         <div class="feature">
           <div class="feature-icon">&#x1F39B;</div>
-          <h3>Quirk slider</h3>
-          <p>0 to 100. Clean grammar in your voice, or full authenticity with every typo. You pick the level per message.</p>
+          <h3>Quirk slider + toggles</h3>
+          <p>0 to 100 slider, plus granular toggles for misspellings, grammar errors, missing apostrophes, lowercase i, punctuation, double spaces, and fragments.</p>
         </div>
         <div class="feature">
           <div class="feature-icon">&#x1F4AC;</div>
           <h3>Multi-platform</h3>
-          <p>Generate for iMessage, Slack, email, GitHub commits, Twitter. Each platform gets appropriate tone and length.</p>
+          <p>Generate for iMessage, Slack, email, GitHub commits, Twitter, TikTok. Each platform gets appropriate tone and length.</p>
         </div>
         <div class="feature">
           <div class="feature-icon">&#x1F4E5;</div>
-          <h3>Multiple data sources</h3>
-          <p>8 sources supported: iMessage, Slack, Gmail, Twitter, Discord, Reddit, Instagram, and GitHub. Download your data archive, feed it to the CLI.</p>
+          <h3>9 data sources</h3>
+          <p>iMessage, Slack, Gmail, Twitter, Discord, Reddit, Instagram, GitHub, and TikTok. Download your data archive, feed it to the CLI.</p>
         </div>
         <div class="feature">
           <div class="feature-icon">&#x1F511;</div>
           <h3>Bring your own key</h3>
           <p>Works with Anthropic Claude or OpenAI GPT. Your API key, your account, your bill. No middleman.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F464;</div>
+          <h3>Persona specs</h3>
+          <p>Load a markdown persona file with <code>--persona</code> to describe how you write in prose. Goes beyond statistics into voice and tone.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#x1F4CB;</div>
+          <h3>Git hooks + clipboard</h3>
+          <p>Auto-generate commit messages in your style with the included git hook. Copy any variant to clipboard with <code>--copy</code>.</p>
         </div>
       </div>
     </div>
@@ -305,6 +315,11 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
           <span class="source-status live">live</span>
           <span class="source-how">Local git repos (commit messages)</span>
         </div>
+        <div class="source-row supported">
+          <span class="source-name">TikTok</span>
+          <span class="source-status live">live</span>
+          <span class="source-how">Data download (comments + DMs)</span>
+        </div>
       </div>
     </div>
   </section>
@@ -322,7 +337,9 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
             <span class="terminal-title">Terminal</span>
           </div>
           <div class="terminal-body">
-            <div class="terminal-line"><span class="prompt">$</span> go install github.com/jschell12/replicateme/cmd/replicateme@latest</div>
+            <div class="terminal-line"><span class="comment"># install via homebrew or go</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> brew install jschell12/tap/replicateme</div>
+            <div class="terminal-line"><span class="comment"># or: go install github.com/jschell12/replicateme/cmd/replicateme@latest</span></div>
             <div class="terminal-line">&nbsp;</div>
             <div class="terminal-line"><span class="comment"># set your API key</span></div>
             <div class="terminal-line"><span class="prompt">$</span> export ANTHROPIC_API_KEY=sk-ant-...</div>
@@ -330,15 +347,22 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
             <div class="terminal-line"><span class="comment"># ingest your messages</span></div>
             <div class="terminal-line"><span class="prompt">$</span> replicateme ingest --source imessage</div>
             <div class="terminal-line">&nbsp;</div>
-            <div class="terminal-line"><span class="comment"># generate</span></div>
-            <div class="terminal-line"><span class="prompt">$</span> replicateme gen "Reply to: hey are you coming tonight?"</div>
+            <div class="terminal-line"><span class="comment"># generate and copy to clipboard</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> replicateme gen --copy "Reply to: hey are you coming tonight?"</div>
             <div class="terminal-output">
 <span class="dim">Generated 3 variants (quirk: 50%)</span>
 
 <span class="gen-label">1.</span> yeah ill be there
 <span class="gen-label">2.</span> yeah im coming
 <span class="gen-label">3.</span> yep on my way soon
+<span class="dim">Copied variant 1 to clipboard</span>
             </div>
+            <div class="terminal-line">&nbsp;</div>
+            <div class="terminal-line"><span class="comment"># use a persona spec for even better results</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> replicateme gen --persona ~/persona.md "Tell the team the deploy is done"</div>
+            <div class="terminal-line">&nbsp;</div>
+            <div class="terminal-line"><span class="comment"># auto-generate commit messages with the git hook</span></div>
+            <div class="terminal-line"><span class="prompt">$</span> cp examples/prepare-commit-msg .git/hooks/</div>
           </div>
         </div>
       </div>
