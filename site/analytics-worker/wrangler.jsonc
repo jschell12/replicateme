@@ -1,0 +1,13 @@
+{
+  "name": "replicateme-collect",
+  "main": "index.js",
+  "compatibility_date": "2026-08-01",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "replicateme.cc/a/e*", "zone_name": "replicateme.cc" },
+    { "pattern": "www.replicateme.cc/a/e*", "zone_name": "replicateme.cc" }
+  ],
+  "analytics_engine_datasets": [
+    { "binding": "ANALYTICS", "dataset": "marketing_analytics" }
+  ]
+}
