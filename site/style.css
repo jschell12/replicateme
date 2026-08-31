@@ -225,16 +225,16 @@ code {
 }
 
 .hero-terminal {
-  max-width: 520px;
+  max-width: 640px;
   margin: 0 auto 40px;
 }
 
 .hero-terminal .terminal-body {
-  padding: 20px 24px;
+  padding: 16px 20px;
 }
 
 .hero-terminal .terminal-line {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .hero-cta {
