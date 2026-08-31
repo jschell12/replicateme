@@ -141,6 +141,7 @@ code {
   padding: 16px 20px;
   line-height: 1.7;
   overflow-x: auto;
+  text-align: left;
 }
 
 .terminal-line {
