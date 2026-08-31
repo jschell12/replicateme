@@ -129,6 +129,10 @@ See [`examples/persona-spec.md`](examples/persona-spec.md) for a production exam
 
 PRs welcome, especially for new data source connectors. See `pkg/connectors/` for the pattern.
 
+### Releasing
+
+Bump `VERSION` (semver, no leading `v`) in the same PR as your change. When it merges to `main`, CI tags `v<VERSION>` and goreleaser publishes the binaries and the Homebrew formula. Leaving `VERSION` alone merges without releasing, and pushing a `v*` tag by hand still works.
+
 ## License
 
 MIT
