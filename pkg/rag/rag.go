@@ -92,6 +92,10 @@ func Embed(cfg RAGConfig, text string) ([]float64, error) {
 		return nil, err
 	}
 
+	if len(result.Embedding) != embeddingDim {
+		return nil, fmt.Errorf("unexpected embedding dimension: got %d, want %d", len(result.Embedding), embeddingDim)
+	}
+
 	return result.Embedding, nil
 }
 
