@@ -13,6 +13,7 @@ import (
 	"github.com/jschell12/replicateme/pkg/connectors"
 	"github.com/jschell12/replicateme/pkg/corpus"
 	"github.com/jschell12/replicateme/pkg/generate"
+	"github.com/jschell12/replicateme/pkg/portable"
 	"github.com/jschell12/replicateme/pkg/rag"
 	"github.com/jschell12/replicateme/pkg/style"
 )
@@ -41,6 +42,10 @@ func main() {
 		cmdSources()
 	case "stats":
 		cmdStats()
+	case "export":
+		cmdExport(args[1:])
+	case "import":
+		cmdImport(args[1:])
 	case "help":
 		cmdHelp()
 	default:
@@ -69,6 +74,15 @@ Commands:
   stats               Show corpus statistics
   profile             Show your writing style profile
     --platform P       Show profile for a specific platform (or "combined", "all")
+
+  export              Export your style profile (no raw messages)
+    --file PATH        Output file (default: replicateme-profile.json)
+    --persona PATH     Include persona spec in the export
+    --prompt           Export as a ready-to-paste AI prompt instead of JSON
+                       (works with Claude Code rules, ChatGPT, Cursor, etc.)
+
+  import              Import/merge a profile from another machine
+    --file PATH        Profile file to import
 
   generate (gen)      Generate a message in your style
     --platform P       Platform style (default: from config)
@@ -652,6 +666,82 @@ func setQuirkToggle(q *config.QuirkToggles, name string, val bool) {
 		fmt.Printf("Unknown quirk %q. Available: misspellings, grammarErrors, missingApostrophes, lowercaseI, skipPunctuation, doubleSpaces, fragments\n", name)
 		os.Exit(1)
 	}
+}
+
+func cmdExport(args []string) {
+	file := getFlag(args, "--file")
+	personaPath := getFlag(args, "--persona")
+	asPrompt := hasFlag(args, "--prompt")
+
+	if personaPath == "" {
+		cfg := config.Load()
+		personaPath = cfg.Persona
+	}
+
+	if asPrompt {
+		outPath := file
+		if outPath == "" {
+			outPath = "replicateme-prompt.md"
+		}
+		if err := portable.ExportPromptToFile(outPath, personaPath); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Prompt exported to %s\n", outPath)
+		fmt.Println("Paste this into Claude Code rules, ChatGPT custom instructions, Cursor rules, or any AI system prompt.")
+		return
+	}
+
+	outPath := file
+	if outPath == "" {
+		outPath = "replicateme-profile.json"
+	}
+
+	if err := portable.ExportToFile(outPath, personaPath); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	bundle, _ := portable.Export(personaPath)
+	fmt.Printf("Exported to %s\n", outPath)
+	fmt.Printf("  Profiles: %d\n", len(bundle.Profiles))
+	if bundle.PersonaSpec != "" {
+		fmt.Println("  Persona spec: included")
+	}
+	fmt.Println("\nThis file contains only statistical patterns, no raw messages.")
+	fmt.Println("Safe to email, Slack, or transfer to another machine.")
+	fmt.Println("Import on another machine: replicateme import --file " + outPath)
+}
+
+func cmdImport(args []string) {
+	file := getFlag(args, "--file")
+	if file == "" {
+		fmt.Println("--file is required.")
+		fmt.Println("Example: replicateme import --file replicateme-profile.json")
+		os.Exit(1)
+	}
+
+	result, err := portable.Import(file)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(result.Added) > 0 {
+		fmt.Printf("Added profiles: %s\n", strings.Join(result.Added, ", "))
+	}
+	if len(result.Updated) > 0 {
+		fmt.Printf("Updated profiles: %s\n", strings.Join(result.Updated, ", "))
+	}
+	if len(result.Skipped) > 0 {
+		fmt.Printf("Skipped (local has more data): %s\n", strings.Join(result.Skipped, ", "))
+	}
+	if result.HasPersona {
+		fmt.Println("\nThe bundle includes a persona spec. To use it:")
+		fmt.Println("  1. Save it: replicateme export --prompt > my-style.md")
+		fmt.Println("  2. Set it: replicateme config --persona my-style.md")
+	}
+	fmt.Println("\nMerge complete. No raw messages were transferred.")
 }
 
 func getFlag(args []string, name string) string {
