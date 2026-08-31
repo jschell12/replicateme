@@ -14,7 +14,7 @@
     <div class="container">
       <div class="hero-badge">open source &middot; MIT licensed</div>
       <h1>replicate<span class="accent">me</span></h1>
-      <p class="hero-tagline">CLI that learns your writing style and generates messages that sound like you.<br>Typos, grammar quirks, and all.</p>
+      <p class="hero-tagline">CLI that learns your writing style and generates messages that sound like you.<br>From formal emails to casual texts.</p>
       <div class="terminal hero-terminal">
         <div class="terminal-bar">
           <span class="terminal-dot red"></span>
@@ -86,7 +86,7 @@ Uses emoji:                <span class="val">2%</span> of the time
 Short fragment messages:   <span class="val">58%</span> of the time
 Lowercase "i" instead of "I": <span class="val">27%</span> of the time
 
-<span class="dim">Top Quirks</span>
+<span class="dim">Writing habits</span>
 <span class="dim">----------</span>
 "im" without apostrophe    <span class="val">843 occurrences</span>
 "dont" without apostrophe  <span class="val">312 occurrences</span>
@@ -107,9 +107,9 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
               <span class="terminal-dot green"></span>
             </div>
             <div class="terminal-body">
-              <div class="terminal-line"><span class="prompt">$</span> replicateme gen --quirk 50 "Friend asks: want to hit up that new brewery this weekend?"</div>
+              <div class="terminal-line"><span class="prompt">$</span> replicateme gen "Friend asks: want to hit up that new brewery this weekend?"</div>
               <div class="terminal-output">
-<span class="dim">Generated 3 variants (quirk: 50%)</span>
+<span class="dim">Generated 3 variants (tone: casual)</span>
 
 <span class="gen-label">1.</span> Yeah im down for that. What day were you thinking?
 <span class="gen-label">2.</span> yeah could be down for that. what day were you thinking?
@@ -125,42 +125,42 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
   <!-- Quirk Slider -->
   <section class="section section-dark" id="quirk-slider">
     <div class="container">
-      <h2>The quirk slider</h2>
-      <p class="section-subtitle">Control how much of your natural writing to include. From polished to raw.</p>
+      <h2>Tone control</h2>
+      <p class="section-subtitle">Slide between casual and formal. Both sound like you.</p>
       <div class="quirk-demo">
         <div class="quirk-slider-container">
           <input type="range" min="0" max="100" value="50" class="quirk-range" id="quirk-slider">
           <div class="quirk-labels">
-            <span>0% clean</span>
+            <span>Casual</span>
             <span id="quirk-value">50%</span>
-            <span>100% you</span>
+            <span>Formal</span>
           </div>
         </div>
         <div class="quirk-examples">
           <div class="quirk-example" data-level="0">
             <div class="quirk-badge">0%</div>
             <p>"I'm going to be about 15 minutes late. Can you grab me a coffee?"</p>
-            <span class="quirk-desc">Your voice and vocabulary, clean grammar</span>
+            <span class="quirk-desc">Formal: your voice, clean grammar</span>
           </div>
           <div class="quirk-example" data-level="25">
             <div class="quirk-badge">25%</div>
             <p>"Im going to be about 15 minutes late. Can you grab me a coffee?"</p>
-            <span class="quirk-desc">Mostly clean, occasional habits slip through</span>
+            <span class="quirk-desc">Work email: mostly clean, a few habits slip through</span>
           </div>
           <div class="quirk-example active" data-level="50">
             <div class="quirk-badge">50%</div>
             <p>"im gonna be like 15 min late. can you grab me a coffee"</p>
-            <span class="quirk-desc">Natural mix of your style and quirks</span>
+            <span class="quirk-desc">Slack message: natural mix of your style</span>
           </div>
           <div class="quirk-example" data-level="75">
             <div class="quirk-badge">75%</div>
             <p>"im gonna be like 15 min late can you grab me a coffee"</p>
-            <span class="quirk-desc">Missing punctuation, lowercase, fragments</span>
+            <span class="quirk-desc">Group chat: dropped punctuation, fragments</span>
           </div>
           <div class="quirk-example" data-level="100">
             <div class="quirk-badge">100%</div>
             <p>"im gonna be like 15 min late  can u grab me a coffee"</p>
-            <span class="quirk-desc">Full you: typos, double spaces, all of it</span>
+            <span class="quirk-desc">Text to a friend: full casual, all of it</span>
           </div>
         </div>
       </div>
@@ -356,7 +356,7 @@ Lowercase "i" instead of "I": <span class="val">27%</span> of the time
             <div class="terminal-line"><span class="comment"># generate and copy to clipboard</span></div>
             <div class="terminal-line"><span class="prompt">$</span> replicateme gen --copy "Reply to: hey are you coming tonight?"</div>
             <div class="terminal-output">
-<span class="dim">Generated 3 variants (quirk: 50%)</span>
+<span class="dim">Generated 3 variants (tone: casual)</span>
 
 <span class="gen-label">1.</span> yeah ill be there
 <span class="gen-label">2.</span> yeah im coming
