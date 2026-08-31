@@ -44,8 +44,8 @@ func main() {
 		cmdStats()
 	case "export":
 		cmdExport(args[1:])
-	case "import":
-		cmdImport(args[1:])
+	case "enrich":
+		cmdEnrich(args[1:])
 	case "help":
 		cmdHelp()
 	default:
@@ -75,14 +75,17 @@ Commands:
   profile             Show your writing style profile
     --platform P       Show profile for a specific platform (or "combined", "all")
 
-  export              Export your style profile (no raw messages)
-    --file PATH        Output file (default: replicateme-profile.json)
+  export              Export a rule file with your writing style (no raw messages)
+    --file PATH        Output file (default: my-writing-style.md)
     --persona PATH     Include persona spec in the export
-    --prompt           Export as a ready-to-paste AI prompt instead of JSON
-                       (works with Claude Code rules, ChatGPT, Cursor, etc.)
+                       Drop the exported file into:
+                         ~/.claude/rules/       (Claude Code)
+                         .cursor/rules/         (Cursor)
+                         ChatGPT custom instructions (paste)
+                         replicateme --persona   (this tool)
 
-  import              Import/merge a profile from another machine
-    --file PATH        Profile file to import
+  enrich              Add local corpus data to an existing rule file
+    --file PATH        Rule file to enrich with local data
 
   generate (gen)      Generate a message in your style
     --platform P       Platform style (default: from config)
@@ -670,78 +673,48 @@ func setQuirkToggle(q *config.QuirkToggles, name string, val bool) {
 
 func cmdExport(args []string) {
 	file := getFlag(args, "--file")
-	personaPath := getFlag(args, "--persona")
-	asPrompt := hasFlag(args, "--prompt")
+	if file == "" {
+		file = "my-writing-style.md"
+	}
 
+	personaPath := getFlag(args, "--persona")
 	if personaPath == "" {
 		cfg := config.Load()
 		personaPath = cfg.Persona
 	}
 
-	if asPrompt {
-		outPath := file
-		if outPath == "" {
-			outPath = "replicateme-prompt.md"
-		}
-		if err := portable.ExportPromptToFile(outPath, personaPath); err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Prompt exported to %s\n", outPath)
-		fmt.Println("Paste this into Claude Code rules, ChatGPT custom instructions, Cursor rules, or any AI system prompt.")
-		return
-	}
-
-	outPath := file
-	if outPath == "" {
-		outPath = "replicateme-profile.json"
-	}
-
-	if err := portable.ExportToFile(outPath, personaPath); err != nil {
+	if err := portable.ExportRuleToFile(file, personaPath); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	bundle, _ := portable.Export(personaPath)
-	fmt.Printf("Exported to %s\n", outPath)
-	fmt.Printf("  Profiles: %d\n", len(bundle.Profiles))
-	if bundle.PersonaSpec != "" {
-		fmt.Println("  Persona spec: included")
-	}
-	fmt.Println("\nThis file contains only statistical patterns, no raw messages.")
-	fmt.Println("Safe to email, Slack, or transfer to another machine.")
-	fmt.Println("Import on another machine: replicateme import --file " + outPath)
+	fmt.Printf("Exported to %s\n\n", file)
+	fmt.Println("This file contains your writing patterns. No raw messages.")
+	fmt.Println("Drop it into any AI tool:")
+	fmt.Println("  Claude Code:  cp " + file + " ~/.claude/rules/")
+	fmt.Println("  Cursor:       cp " + file + " .cursor/rules/")
+	fmt.Println("  ChatGPT:      paste the contents into custom instructions")
+	fmt.Println("  replicateme:  replicateme config --persona " + file)
+	fmt.Println()
+	fmt.Println("On a work machine with replicateme installed, enrich it with local data:")
+	fmt.Println("  replicateme enrich --file " + file)
 }
 
-func cmdImport(args []string) {
+func cmdEnrich(args []string) {
 	file := getFlag(args, "--file")
 	if file == "" {
 		fmt.Println("--file is required.")
-		fmt.Println("Example: replicateme import --file replicateme-profile.json")
+		fmt.Println("Example: replicateme enrich --file my-writing-style.md")
 		os.Exit(1)
 	}
 
-	result, err := portable.Import(file)
-	if err != nil {
+	if err := portable.EnrichRuleFile(file); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	if len(result.Added) > 0 {
-		fmt.Printf("Added profiles: %s\n", strings.Join(result.Added, ", "))
-	}
-	if len(result.Updated) > 0 {
-		fmt.Printf("Updated profiles: %s\n", strings.Join(result.Updated, ", "))
-	}
-	if len(result.Skipped) > 0 {
-		fmt.Printf("Skipped (local has more data): %s\n", strings.Join(result.Skipped, ", "))
-	}
-	if result.HasPersona {
-		fmt.Println("\nThe bundle includes a persona spec. To use it:")
-		fmt.Println("  1. Save it: replicateme export --prompt > my-style.md")
-		fmt.Println("  2. Set it: replicateme config --persona my-style.md")
-	}
-	fmt.Println("\nMerge complete. No raw messages were transferred.")
+	fmt.Printf("Enriched %s with local corpus data\n", file)
+	fmt.Println("The file now includes patterns from this machine's ingested messages.")
 }
 
 func getFlag(args []string, name string) string {
