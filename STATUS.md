@@ -1,26 +1,24 @@
 # replicateme status
 
-## 2026-08-30 (session 4)
+## 2026-08-31
 
 ### Completed
 
-- **RAG vector search** (PR #26, v0.3.0) - messages embedded via Ollama bge-m3, stored in Qdrant. Generation pulls 15 most similar examples instead of random sampling. Falls back to random if infra unreachable. Progress indicator during indexing.
-- **v0.3.0 released** - goreleaser + homebrew formula updated
-- **Marketing site updated** (PR #24) - all v0.2.0 features added
+- **3 new LLM providers** (PR #28) - claude-cli (Max subscription, no API cost), ollama (local models, zero cost), openai --base-url (any OpenAI-compatible server). Tested ollama with mistral-small:24b.
+- **Privacy card fix** (PR #29) - features card now discloses site analytics
+- **RAG embedding validation** (PR #30) - validate embedding dimension before Qdrant upsert. Prevents batch failures from malformed embeddings.
+- **RAG corpus** - 34k of 45k iMessages indexed in Qdrant before the embedding bug killed the first run. Fix allows re-running to completion.
 
 ### Next steps
 
-- Automate homebrew formula update in release workflow
-- Full corpus indexing (45k messages, running in background)
-- More real-world testing with RAG-powered generation
+- Re-run full iMessage ingest to index remaining ~11k messages
+- Connector tests (all 9 sources)
+- Update marketing site with new provider options
+- Tag v0.3.1 or v0.4.0
 
-## 2026-08-30 (session 3)
+## 2026-08-30
 
-- v0.2.0: persona spec, git hook, clipboard, TikTok, quirk toggles. Marketing site updated.
-
-## 2026-08-30 (sessions 1-2)
-
-- workflow_dispatch, WireGuard NAT fix, v0.2.0 features implemented
+- v0.2.0 (persona spec, git hook, clipboard, TikTok, quirk toggles), v0.3.0 (RAG), marketing site updates
 
 ## 2026-08-29
 
