@@ -46,20 +46,7 @@ function typeTerminal() {
   const prompt = heroLine.querySelector('.prompt');
   if (!prompt) return;
 
-  // Already has content, just add a blinking cursor
-  const cursor = document.createElement('span');
-  cursor.className = 'cursor';
-  cursor.textContent = '\u258B';
-  cursor.style.cssText = 'animation: blink 1s step-end infinite; color: var(--accent); margin-left: 2px;';
-  heroLine.appendChild(cursor);
-
-  // Add blink animation
-  if (!document.getElementById('cursor-style')) {
-    const style = document.createElement('style');
-    style.id = 'cursor-style';
-    style.textContent = '@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }';
-    document.head.appendChild(style);
-  }
+  // no-op: cursor removed to avoid layout artifacts
 }
 
 typeTerminal();
@@ -92,7 +79,7 @@ typeTerminal();
     document.addEventListener('copy', function () {
       try {
         var sel = String(window.getSelection ? window.getSelection() : '');
-        if (sel.indexOf('go install github.com/jschell12/replicateme') !== -1) track('install_copy');
+        if (sel.indexOf('brew install') !== -1 || sel.indexOf('go install github.com/jschell12/replicateme') !== -1) track('install_copy');
       } catch (e) {}
     });
   } catch (e) {}
