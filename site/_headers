@@ -1,0 +1,9 @@
+# index.html already revalidates on every load. Without this, Cloudflare Pages
+# serves style.css and script.js with max-age=14400, so a returning visitor gets
+# new HTML against a stylesheet up to 4 hours old. That skew rendered the SVG
+# icons as unstyled black blocks after the icon-set deploy.
+/style.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/script.js
+  Cache-Control: public, max-age=0, must-revalidate
