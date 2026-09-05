@@ -734,3 +734,53 @@ code {
     display: none;
   }
 }
+
+/* ── Icons ─────────────────────────────────────────────────────
+   Append to site/style.css. Sprite symbols live inline at the top of
+   index.html; these rules give them stroke, size, and color.
+
+   All geometry is drawn to a 24x24 grid with a 1.5px stroke — do not
+   scale below 16px, and keep stroke-width at 1.5 so weight stays even
+   across the three sizes used on the page.
+   ────────────────────────────────────────────────────────────── */
+
+.icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+  flex-shrink: 0;
+}
+
+/* Feature cards — replaces the emoji .feature-icon.
+   Was: font-size: 1.5rem; margin-bottom: 12px;  */
+.feature-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+/* Privacy list — replaces the &#10003; text glyph.
+   Was: color: var(--green); font-weight: bold; margin-top: 2px;  */
+.check {
+  width: 18px;
+  height: 18px;
+  color: var(--green);
+  margin-top: 3px;
+}
+
+/* Data-sources table: optional mark before the "live" pill */
+.source-status.live .icon,
+.source-live-mark {
+  width: 14px;
+  height: 14px;
+  color: var(--green);
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
